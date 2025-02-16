@@ -2,6 +2,7 @@ package com.uiptv.service;
 
 import com.uiptv.db.AccountDb;
 import com.uiptv.model.Account;
+import com.uiptv.ui.LogsUI;
 import com.uiptv.util.PingStalkerPortal;
 import com.uiptv.util.StringUtils;
 import org.json.JSONObject;
@@ -92,6 +93,8 @@ public class HandshakeService {
         String json = fetch(getHandshakeParams(), account);
         account.setToken(parseJasonToken(json));
         if (account.isNotConnected()) {
+
+            LogsUI.logError("Unable to retrieve a token:\n\n" + json);
             System.out.print("Unable to retrieve a token:\n\n" + json);
             return;
         }
@@ -110,6 +113,7 @@ public class HandshakeService {
         String json = fetch(getHandshakeParams(), account);
         account.setToken(parseJasonToken(json));
         if (account.isNotConnected()) {
+            LogsUI.logError("Unable to retrieve a token:\n\n" + json);
             System.out.println("Unable to retrieve a token:\n\n" + json);
         }
         fetch(getProfileParams(account), account);
@@ -118,6 +122,7 @@ public class HandshakeService {
     public String parseJasonToken(String json) {
         if (isBlank(json) || new JSONObject(json).getJSONObject("js") == null
                 || isBlank(new JSONObject(json).getJSONObject("js").getString("token"))) {
+            LogsUI.logError("Error while establishing connection to server");
             System.out.println("Error while establishing connection to server");
             return StringUtils.EMPTY;
         }

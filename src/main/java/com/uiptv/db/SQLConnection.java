@@ -1,5 +1,6 @@
 package com.uiptv.db;
 
+import com.uiptv.ui.LogsUI;
 import org.apache.commons.io.FileUtils;
 
 import java.io.File;
@@ -22,6 +23,7 @@ public class SQLConnection {
                     String sql = DatabaseUtils.createTableSql(t);
                     statement.execute(sql);
                 } catch (Exception ex) {
+                    LogsUI.logError("Error in create table: " + ex.getMessage(), ex);
                     System.out.println(ex);
                 }
             }

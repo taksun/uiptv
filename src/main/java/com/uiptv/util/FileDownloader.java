@@ -1,18 +1,17 @@
 package com.uiptv.util;
 
 import com.uiptv.service.ConfigurationService;
+import com.uiptv.ui.LogsUI;
+import com.uiptv.ui.RootApplication;
 import javafx.application.Platform;
 import javafx.concurrent.Task;
 import javafx.geometry.Pos;
 import javafx.scene.Scene;
-import javafx.scene.control.Button;
-import javafx.scene.control.Label;
-import javafx.scene.control.ListView;
-import javafx.scene.control.ProgressBar;
-import javafx.scene.control.Tooltip;
+import javafx.scene.control.*;
 import javafx.scene.layout.VBox;
 import javafx.stage.Modality;
 import javafx.stage.Stage;
+import javafx.stage.StageStyle;
 
 import java.io.BufferedInputStream;
 import java.io.File;
@@ -40,6 +39,7 @@ public class FileDownloader {
         // Tworzenie nowego okna
         Stage downloadStage = new Stage();
         downloadStage.initModality(Modality.APPLICATION_MODAL);
+        downloadStage.initStyle(StageStyle.UTILITY);
         downloadStage.setTitle("Pobieranie plików");
 
         // Tworzenie paska postępu
@@ -60,6 +60,8 @@ public class FileDownloader {
         // Przycisk do anulowania pobierania
         Button cancelButton = new Button("Anuluj");
         cancelButton.setDisable(true);
+
+        downloadStage.setOnHiding(event -> cancelButton.fire());
 
         // Tworzenie zadania do pobierania plików
         Task<Void> downloadTask = createDownloadTask(filesToDownload, currentFileLabel, queueListView);
@@ -82,6 +84,7 @@ public class FileDownloader {
         downloadTask.setOnFailed(e -> {
             statusLabel.textProperty().unbind();
             statusLabel.setText("Błąd podczas pobierania: " + downloadTask.getException().getMessage());
+            LogsUI.logError("Błąd podczas pobierania: " + downloadTask.getException().getMessage(), downloadTask.getException());
             System.err.println("Błąd podczas pobierania: " + downloadTask.getException().getMessage());
             downloadTask.getException().printStackTrace();
             progressBar.progressProperty().unbind();
@@ -91,12 +94,16 @@ public class FileDownloader {
 
         // Akcja dla przycisku anulowania
         cancelButton.setOnAction(event -> {
+            LogsUI.logInfo("Anulowanie pobierania");
             if (downloadTask.isRunning()) {
                 downloadTask.cancel();
                 statusLabel.textProperty().unbind();
                 statusLabel.setText("Pobieranie anulowane.");
                 progressBar.progressProperty().unbind();
                 progressBar.setProgress(0);
+                LogsUI.logInfo("Pobieranie anulowane");
+            } else {
+                LogsUI.logInfo("Task pobierania nie był aktywny");
             }
         });
 
@@ -111,6 +118,7 @@ public class FileDownloader {
         // Tworzenie sceny i ustawienie jej na stage
         Scene downloadScene = new Scene(downloadLayout, 400, 300);
         downloadStage.setScene(downloadScene);
+        RootApplication.configureFontStyles(downloadScene);
         downloadStage.show();
 
         // Wymuszenie odświeżenia interfejsu użytkownika
@@ -128,12 +136,15 @@ public class FileDownloader {
 
                     Optional<Map.Entry<String, String>> first = filesToDownload.entrySet().stream().findFirst();
                     if (first.isEmpty()) {
+                        LogsUI.logError("Pusta lista filesToDownload");
                         System.out.println("Pusta lista filesToDownload");
                         return null;
                     }
 
                     String fileUrl = first.get().getKey();
                     String destinationFileName = first.get().getValue();
+
+                    LogsUI.logInfo("Rozpoczynam pobieranie: " + destinationFileName);
 
                     // Zaktualizuj etykietę aktualnie pobieranego pliku
                     updateMessage("Pobieranie: " + destinationFileName);
@@ -146,6 +157,8 @@ public class FileDownloader {
                     // Pobierz rozmiar pliku
                     long fileSize = getFileSize(fileUrl);
 
+                    LogsUI.logInfo("Rozmiar pliku do pobrania: " + fileSize);
+
                     // Sprawdź dostępność miejsca na dysku
                     String downloadPath = ConfigurationService.getInstance().read().getDownloadPath() + File.separator;
                     Path destination = FileSystems.getDefault().getPath(downloadPath + destinationFileName);
@@ -155,18 +168,19 @@ public class FileDownloader {
                     if (Files.exists(destination)) {
                         downloadedBytes.set(Files.size(destination));
                         if (downloadedBytes.get() >= fileSize) {
+                            LogsUI.logInfo("Plik już został pobrany.");
                             updateMessage("Plik już został pobrany.");
                             removeFileFromDownloadList(fileUrl, destinationFileName, filesToDownload, queueListView);
                             continue;
                         }
+                        LogsUI.logInfo("Plik ma już pobrane: " + downloadedBytes.get() + ", kontynuujemy pobieranie");
                     }
 
                     // Zmienna do przechowywania całkowitej liczby pobranych bajtów
                     AtomicLong totalBytesRead = new AtomicLong(downloadedBytes.get());
 
                     Thread transferThread = new Thread(() -> {
-                        try (ReadableByteChannel sourceChannel = Channels.newChannel(openStreamWithRange(fileUrl, downloadedBytes.get()));
-                             FileChannel fileChannel = FileChannel.open(destination, StandardOpenOption.CREATE, StandardOpenOption.WRITE)) {
+                        try (ReadableByteChannel sourceChannel = Channels.newChannel(openStreamWithRange(fileUrl, downloadedBytes.get())); FileChannel fileChannel = FileChannel.open(destination, StandardOpenOption.CREATE, StandardOpenOption.WRITE)) {
 
                             fileChannel.position(downloadedBytes.get()); // Ustaw pozycję zapisu
 
@@ -215,9 +229,12 @@ public class FileDownloader {
                             progressThread.join();
 
                             fileChannel.force(true); // Wymuś zapis na dysk
+
+                            LogsUI.logInfo("Zapisano plik na dysk: " + destination);
                             System.out.println("Zapisano plik na dysk: " + destination);
                         } catch (IOException | InterruptedException e) {
                             updateMessage("Błąd podczas przesyłania: " + e.getMessage());
+                            LogsUI.logError("Błąd podczas przesyłania: " + e.getMessage(), e);
                             System.err.println("Błąd podczas przesyłania: " + e.getMessage());
                         }
                     });
@@ -229,6 +246,7 @@ public class FileDownloader {
                     // Sprawdź, czy cały plik został pobrany
                     if (fileSize > 0 && !isCancelled() && totalBytesRead.get() < fileSize) {
                         updateMessage("Pobieranie przerwane: pobrano tylko " + totalBytesRead.get() + " bajtów z " + fileSize);
+                        LogsUI.logError("Pobieranie przerwane: pobrano tylko " + totalBytesRead.get() + " bajtów z " + fileSize);
                         System.err.println("Pobieranie przerwane: pobrano tylko " + totalBytesRead.get() + " bajtów z " + fileSize);
                     } else {
                         removeFileFromDownloadList(fileUrl, destinationFileName, filesToDownload, queueListView);

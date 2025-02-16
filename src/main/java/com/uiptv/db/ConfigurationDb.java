@@ -1,6 +1,7 @@
 package com.uiptv.db;
 
 import com.uiptv.model.Configuration;
+import com.uiptv.ui.LogsUI;
 
 import java.sql.*;
 import java.util.List;
@@ -92,6 +93,7 @@ public class ConfigurationDb extends BaseDb {
             statement.setString(14, configuration.getDownloadPath());
             statement.execute();
         } catch (SQLException e) {
+            LogsUI.logError("Error in save configuration: " + e.getMessage(), e);
             System.out.println(e.getMessage());
             e.printStackTrace();
             throw new RuntimeException("Unable to execute query");

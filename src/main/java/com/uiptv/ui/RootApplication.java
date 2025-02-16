@@ -5,9 +5,9 @@ import com.uiptv.model.Account;
 import com.uiptv.model.Configuration;
 import com.uiptv.server.UIptvServer;
 import com.uiptv.service.ConfigurationService;
-import com.uiptv.widget.UIptvAlert;
 import com.uiptv.widget.CollapsedTitledPane;
 import com.uiptv.widget.ExpendedTitledPane;
+import com.uiptv.widget.UIptvAlert;
 import javafx.application.Application;
 import javafx.beans.binding.Bindings;
 import javafx.beans.property.SimpleStringProperty;
@@ -24,16 +24,17 @@ import java.util.Arrays;
 import static com.uiptv.util.StringUtils.isNotBlank;
 
 public class RootApplication extends Application {
-    public final static int GUIDED_MAX_WIDTH_PIXELS = 1368;
-    public final static int GUIDED_MAX_HEIGHT_PIXELS = 1920;
+    public static final int GUIDED_MAX_WIDTH_PIXELS = 1368;
+    public static final int GUIDED_MAX_HEIGHT_PIXELS = 1920;
     public static Stage primaryStage;
-    private final ConfigurationService configurationService = ConfigurationService.getInstance();
 
     public static void main(String[] args) {
+        LogsUI.logInfoNoRefreshWeb("Aplikacja uruchomiona.");
         if (args != null && Arrays.stream(args).anyMatch(s -> s.toLowerCase().contains("headless"))) {
             try {
                 UIptvServer.start();
             } catch (IOException e) {
+                LogsUI.logError("Error to start server: " + e.getMessage(), e);
                 throw new RuntimeException(e);
             }
         } else {
@@ -44,6 +45,7 @@ public class RootApplication extends Application {
                 UIptvServer.stop();
                 UIptvAlert.showMessage("UIPTV Shutting down");
             } catch (IOException e) {
+                LogsUI.logError("Error at stop server: " + e.getMessage(), e);
                 throw new RuntimeException(e);
             }
         }));
@@ -51,6 +53,7 @@ public class RootApplication extends Application {
 
     @Override
     public final void start(Stage primaryStage) throws IOException {
+        LogsUI.logInfoNoRefreshWeb("Inicjalizacja komponentów...");
         RootApplication.primaryStage = primaryStage;
 
         ManageAccountUI manageAccountUI = new ManageAccountUI();
@@ -64,14 +67,17 @@ public class RootApplication extends Application {
                 configureFontStyles(RootApplication.primaryStage.getScene());
                 accountListUI.refresh();
             } catch (Exception e) {
+                LogsUI.logError("Error in configurationUI callback: " + e.getMessage(), e);
                 throw new RuntimeException(e);
             }
         });
+        LogsUI logsUI = new LogsUI();
         manageAccountUI.addCallbackHandler(param -> {
             try {
                 accountListUI.refresh();
                 bookmarkChannelListUI.refresh();
             } catch (Exception e) {
+                LogsUI.logError("Error in manageAccountUI callback: " + e.getMessage(), e);
                 throw new RuntimeException(e);
             }
         });
@@ -79,10 +85,12 @@ public class RootApplication extends Application {
             try {
                 accountListUI.refresh();
             } catch (Exception e) {
+                LogsUI.logError("Error in parseMultipleAccountUI callback: " + e.getMessage(), e);
                 throw new RuntimeException(e);
             }
         });
         configurationUI.setMinWidth((double) GUIDED_MAX_WIDTH_PIXELS / 4);
+        logsUI.setMinWidth((double) GUIDED_MAX_WIDTH_PIXELS / 4);
         parseMultipleAccountUI.setMinWidth((double) GUIDED_MAX_WIDTH_PIXELS / 4);
         manageAccountUI.setMinWidth((double) GUIDED_MAX_WIDTH_PIXELS / 4);
         bookmarkChannelListUI.setMinWidth((double) GUIDED_MAX_WIDTH_PIXELS / 4);
@@ -94,7 +102,8 @@ public class RootApplication extends Application {
                         new CollapsedTitledPane("Configuration", configurationUI),
                         new CollapsedTitledPane("Account", manageAccountUI),
                         new CollapsedTitledPane("Import Bulk Accounts", parseMultipleAccountUI),
-                        bookmarkUI
+                        bookmarkUI,
+                        new CollapsedTitledPane("Logs", logsUI)
                 ), accountListUI);
         sceneBox.setPadding(new Insets(10, 0, 0, 0));
         sceneBox.setPrefHeight(GUIDED_MAX_HEIGHT_PIXELS);
@@ -106,6 +115,7 @@ public class RootApplication extends Application {
         primaryStage.setScene(scene);
         primaryStage.getIcons().add(new Image("file:icon.ico"));
         primaryStage.show();
+        LogsUI.logInfo("Gotowe.");
     }
 
     @Override
@@ -114,13 +124,13 @@ public class RootApplication extends Application {
             UIptvServer.stop();
             UIptvAlert.showMessage("UIPTV Shutting down");
         } catch (IOException e) {
-            throw new RuntimeException(e);
+            LogsUI.logError("Error in stop: " + e.getMessage(), e);
         }
         super.stop();
     }
 
-    private void configureFontStyles(Scene scene) {
-        Configuration configuration = configurationService.read();
+    public static void configureFontStyles(Scene scene) {
+        Configuration configuration = ConfigurationService.getInstance().read();
         String customStylesheet = "";
         if (isNotBlank(configuration.getFontFamily())) {
             customStylesheet += Bindings.format("-fx-font-family: %s;", new SimpleStringProperty(configuration.getFontFamily())).getValueSafe();
@@ -132,7 +142,6 @@ public class RootApplication extends Application {
             customStylesheet += Bindings.format("-fx-font-weight: %s;", new SimpleStringProperty(configuration.getFontWeight())).getValueSafe();
         }
         scene.getStylesheets().clear();
-//        scene.setDa(scene, configuration.isDarkTheme());
         scene.getStylesheets().add(configuration.isDarkTheme() ? "dark-application.css" : "application.css");
         scene.getRoot().styleProperty().bind(Bindings.format(customStylesheet));
     }

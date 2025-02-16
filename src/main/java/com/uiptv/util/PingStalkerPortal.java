@@ -1,5 +1,7 @@
 package com.uiptv.util;
 
+import com.uiptv.ui.LogsUI;
+
 import java.net.HttpURLConnection;
 import java.net.URI;
 import java.net.http.HttpClient;
@@ -34,6 +36,7 @@ public class PingStalkerPortal {
                 return parsePortalApiServer((response.body() + " ").replace(" ", ""), url);
             }
         } catch (Exception ex) {
+            LogsUI.logError("Network Error: " + ex.getMessage(), ex);
             System.out.print("Network Error: " + ex.getMessage());
         }
         return PORTAL.getLoader();

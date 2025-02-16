@@ -4,9 +4,9 @@ import com.uiptv.api.Callback;
 import com.uiptv.model.Configuration;
 import com.uiptv.server.UIptvServer;
 import com.uiptv.service.ConfigurationService;
+import com.uiptv.widget.ProminentButton;
 import com.uiptv.widget.UIptvText;
 import com.uiptv.widget.UIptvTextArea;
-import com.uiptv.widget.ProminentButton;
 import javafx.geometry.Insets;
 import javafx.scene.control.Button;
 import javafx.scene.control.CheckBox;
@@ -184,6 +184,7 @@ public class ConfigurationUI extends VBox {
                 showMessageAlert("Successfully saved!");
                 onSaveCallback.call(null);
             } catch (Exception e) {
+                LogsUI.logError("Error in configuration save " + e.getMessage(), e);
                 System.out.printf(e.getMessage());
                 e.printStackTrace();
                 showErrorAlert("Failed to save configuration!");

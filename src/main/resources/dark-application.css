@@ -1,11 +1,16 @@
+body {
+    background-color: rgba(60, 63, 65, 255);
+}
+
 .root {
     -fx-accent: #1e74c6;
     -fx-focus-color: -fx-accent;
     /*-fx-base: #373e43;*/
-    -fx-base: rgba(60, 63, 65, 255); // dark
+    -fx-base: rgba(60, 63, 65, 255);
     -fx-control-inner-background: derive(-fx-base, 35%);
     -fx-control-inner-background-alt: -fx-control-inner-background;
 }
+
 .titleWindowsBorder {
     -fx-background-color: darkgray;
 }
@@ -77,6 +82,7 @@
     -fx-base: darkred;
     -fx-text-fill: white;
 }
+
 .prominent {
     -fx-base: darkgreen;
     -fx-text-fill: white;
