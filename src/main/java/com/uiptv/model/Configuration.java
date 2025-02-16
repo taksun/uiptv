@@ -8,17 +8,18 @@ import java.util.Objects;
 import static com.uiptv.util.StringUtils.safeJson;
 
 public class Configuration implements Serializable, JsonCompliant {
-    private String dbId, playerPath1, playerPath2, playerPath3, defaultPlayerPath, filterCategoriesList, filterChannelsList, fontFamily, fontSize, fontWeight, serverPort;
+    private String dbId, playerPath1, playerPath2, playerPath3, downloadPath, defaultPlayerPath, filterCategoriesList, filterChannelsList, fontFamily, fontSize, fontWeight, serverPort;
     private boolean darkTheme, pauseFiltering, pauseCaching;
 
     public Configuration() {
     }
 
 
-    public Configuration(String playerPath1, String playerPath2, String playerPath3, String defaultPlayerPath, String filterCategoriesList, String filterChannelsList, boolean pauseFiltering, String fontFamily, String fontSize, String fontWeight, boolean darkTheme, String serverPort, boolean pauseCaching) {
+    public Configuration(String playerPath1, String playerPath2, String playerPath3, String downloadPath, String defaultPlayerPath, String filterCategoriesList, String filterChannelsList, boolean pauseFiltering, String fontFamily, String fontSize, String fontWeight, boolean darkTheme, String serverPort, boolean pauseCaching) {
         this.playerPath1 = playerPath1;
         this.playerPath2 = playerPath2;
         this.playerPath3 = playerPath3;
+        this.downloadPath = downloadPath;
         this.defaultPlayerPath = defaultPlayerPath;
         this.filterCategoriesList = filterCategoriesList;
         this.filterChannelsList = filterChannelsList;
@@ -61,6 +62,14 @@ public class Configuration implements Serializable, JsonCompliant {
 
     public void setPlayerPath3(String playerPath3) {
         this.playerPath3 = playerPath3;
+    }
+
+    public String getDownloadPath() {
+        return downloadPath;
+    }
+
+    public void setDownloadPath(String downloadPath) {
+        this.downloadPath = downloadPath;
     }
 
     public String getDefaultPlayerPath() {
@@ -148,12 +157,12 @@ public class Configuration implements Serializable, JsonCompliant {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
         Configuration that = (Configuration) o;
-        return darkTheme == that.darkTheme && pauseFiltering == that.pauseFiltering && pauseCaching == that.pauseCaching && Objects.equals(dbId, that.dbId) && Objects.equals(playerPath1, that.playerPath1) && Objects.equals(playerPath2, that.playerPath2) && Objects.equals(playerPath3, that.playerPath3) && Objects.equals(defaultPlayerPath, that.defaultPlayerPath) && Objects.equals(filterCategoriesList, that.filterCategoriesList) && Objects.equals(filterChannelsList, that.filterChannelsList) && Objects.equals(fontFamily, that.fontFamily) && Objects.equals(fontSize, that.fontSize) && Objects.equals(fontWeight, that.fontWeight) && Objects.equals(serverPort, that.serverPort);
+        return darkTheme == that.darkTheme && pauseFiltering == that.pauseFiltering && pauseCaching == that.pauseCaching && Objects.equals(dbId, that.dbId) && Objects.equals(playerPath1, that.playerPath1) && Objects.equals(playerPath2, that.playerPath2) && Objects.equals(playerPath3, that.playerPath3) && Objects.equals(downloadPath, that.downloadPath) && Objects.equals(defaultPlayerPath, that.defaultPlayerPath) && Objects.equals(filterCategoriesList, that.filterCategoriesList) && Objects.equals(filterChannelsList, that.filterChannelsList) && Objects.equals(fontFamily, that.fontFamily) && Objects.equals(fontSize, that.fontSize) && Objects.equals(fontWeight, that.fontWeight) && Objects.equals(serverPort, that.serverPort);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(dbId, playerPath1, playerPath2, playerPath3, defaultPlayerPath, filterCategoriesList, filterChannelsList, fontFamily, fontSize, fontWeight, serverPort, darkTheme, pauseFiltering, pauseCaching);
+        return Objects.hash(dbId, playerPath1, playerPath2, playerPath3, downloadPath, defaultPlayerPath, filterCategoriesList, filterChannelsList, fontFamily, fontSize, fontWeight, serverPort, darkTheme, pauseFiltering, pauseCaching);
     }
 
     @Override
@@ -163,6 +172,7 @@ public class Configuration implements Serializable, JsonCompliant {
                 ", playerPath1='" + playerPath1 + '\'' +
                 ", playerPath2='" + playerPath2 + '\'' +
                 ", playerPath3='" + playerPath3 + '\'' +
+                ", downloadPath='" + downloadPath + '\'' +
                 ", defaultPlayerPath='" + defaultPlayerPath + '\'' +
                 ", filterCategoriesList='" + filterCategoriesList + '\'' +
                 ", filterChannelsList='" + filterChannelsList + '\'' +
@@ -183,6 +193,7 @@ public class Configuration implements Serializable, JsonCompliant {
                 ",         \"playerPath1\":\"" + safeJson(playerPath1) + "\"" +
                 ",         \"playerPath2\":\"" + safeJson(playerPath2) + "\"" +
                 ",         \"playerPath3\":\"" + safeJson(playerPath3) + "\"" +
+                ",         \"downloadPath\":\"" + safeJson(downloadPath) + "\"" +
                 ",         \"defaultPlayerPath\":\"" + safeJson(defaultPlayerPath) + "\"" +
                 ",         \"filterCategoriesList\":\"" + safeJson(filterCategoriesList) + "\"" +
                 ",         \"filterChannelsList\":\"" + safeJson(filterChannelsList) + "\"" +

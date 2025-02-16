@@ -7,6 +7,7 @@ import com.uiptv.service.BookmarkService;
 import com.uiptv.service.ChannelService;
 import com.uiptv.service.ConfigurationService;
 import com.uiptv.service.PlayerService;
+import com.uiptv.util.FileDownloader;
 import com.uiptv.util.Platform;
 import com.uiptv.widget.AutoGrowVBox;
 import com.uiptv.widget.UIptvAlert;
@@ -20,9 +21,11 @@ import javafx.scene.input.MouseButton;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.VBox;
 
+import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
 import static com.uiptv.model.Account.AccountAction.series;
 import static com.uiptv.util.AccountType.STALKER_PORTAL;
@@ -56,7 +59,7 @@ public class ChannelListUI extends HBox {
             Bookmark b = new Bookmark(account.getAccountName(), categoryTitle, i.getChannelId(), i.getName(), i.getCmd(), account.getServerPortalUrl());
             boolean checkBookmark = BookmarkService.getInstance().isChannelBookmarked(b);
             UIptvAlert.showMessage(b + " --- " + checkBookmark);
-            catList.add(new ChannelItem(new SimpleStringProperty(checkBookmark ? "**" + i.getName().replace("*", "") + "**" : i.getName()), new SimpleStringProperty(i.getChannelId()), new SimpleStringProperty(i.getCmd())));
+            catList.add(new ChannelItem(new SimpleStringProperty(checkBookmark ? "**" + i.getName().replace("*", "") + "**" : i.getName()), new SimpleStringProperty(i.getContainerExtension()), new SimpleStringProperty(i.getChannelId()), new SimpleStringProperty(i.getCmd())));
         });
         table.setItems(FXCollections.observableArrayList(catList));
         table.addTextFilter();
@@ -91,25 +94,24 @@ public class ChannelListUI extends HBox {
     private void addChannelClickHandler() {
         table.setOnKeyReleased(event -> {
             if (event.getCode() == KeyCode.ENTER) {
-                PlayOrShowSeries((ChannelItem) table.getFocusModel().getFocusedItem());
+                downloadOrShowSeries((ChannelItem) table.getFocusModel().getFocusedItem());
             }
         });
         table.setRowFactory(tv -> {
             TableRow<ChannelItem> row = new TableRow<>();
             row.setOnMouseClicked(event -> {
                 if (!row.isEmpty() && event.getButton() == MouseButton.PRIMARY && event.getClickCount() == 2) {
-                    PlayOrShowSeries(row.getItem());
+                    downloadOrShowSeries(row.getItem());
                 }
             });
-            if (!(account.getAction() == series && account.getType() == XTREME_API)) {
-                addRightClickContextMenu(row);
-            }
+
+            addRightClickContextMenu(row);
 
             return row;
         });
     }
 
-    private void PlayOrShowSeries(ChannelItem item) {
+    private void downloadOrShowSeries(ChannelItem item) {
         if (account.getAction() == series && account.getType() == XTREME_API) {
             if (this.getChildren().size() > 1) {
                 this.getChildren().remove(1);
@@ -123,10 +125,10 @@ public class ChannelListUI extends HBox {
                 this.getChildren().clear();
                 getChildren().addAll(new VBox(5, table.getSearchTextField(), table), new ChannelListUI(ChannelService.getInstance().getSeries(categoryId, item.getChannelId(), account), account, item.getChannelName(), bookmarkChannelListUI, categoryId));
             } else {
-                play(item);
+                download(item);
             }
         } else {
-            play(item);
+            download(item);
         }
     }
 
@@ -141,29 +143,37 @@ public class ChannelListUI extends HBox {
             this.refresh();
             bookmarkChannelListUI.refresh();
         });
+        if (!(account.getAction() == series && account.getType() == XTREME_API)) {
+            MenuItem player1Item = new MenuItem("Player 1");
+            player1Item.setOnAction(event -> {
+                rowMenu.hide();
+                play1(row.getItem());
+            });
+            MenuItem player2Item = new MenuItem("Player 2");
+            player2Item.setOnAction(event -> {
+                rowMenu.hide();
+                play2(row.getItem());
+            });
+            MenuItem player3Item = new MenuItem("Player 3");
+            player3Item.setOnAction(event -> {
+                rowMenu.hide();
+                play3(row.getItem());
+            });
+            MenuItem downloadItem = new MenuItem("Download");
+            downloadItem.setOnAction(event -> {
+                rowMenu.hide();
+                download(row.getItem());
+            });
 
-        MenuItem player1Item = new MenuItem("Player 1");
-        player1Item.setOnAction(event -> {
-            rowMenu.hide();
-            play1(row.getItem());
-        });
-        MenuItem player2Item = new MenuItem("Player 2");
-        player2Item.setOnAction(event -> {
-            rowMenu.hide();
-            play2(row.getItem());
-        });
-        MenuItem player3Item = new MenuItem("Player 3");
-        player3Item.setOnAction(event -> {
-            rowMenu.hide();
-            play3(row.getItem());
-        });
-
-        MenuItem reconnectAndPlayItem = new MenuItem("Reconnect & Play");
-        reconnectAndPlayItem.setOnAction(event -> {
-            rowMenu.hide();
-            reconnectAndPlay(row.getItem(), ConfigurationService.getInstance().read().getDefaultPlayerPath());
-        });
-        rowMenu.getItems().addAll(editItem, player1Item, player2Item, player3Item, reconnectAndPlayItem);
+            MenuItem reconnectAndPlayItem = new MenuItem("Reconnect & Play");
+            reconnectAndPlayItem.setOnAction(event -> {
+                rowMenu.hide();
+                reconnectAndPlay(row.getItem(), ConfigurationService.getInstance().read().getDefaultPlayerPath());
+            });
+            rowMenu.getItems().addAll(editItem, player1Item, player2Item, player3Item, downloadItem, reconnectAndPlayItem);
+        } else {
+            rowMenu.getItems().addAll(editItem);
+        }
 
         // only display context menu for non-empty rows:
         row.contextMenuProperty().bind(
@@ -212,14 +222,25 @@ public class ChannelListUI extends HBox {
         }
     }
 
+    private void download(ChannelItem item) {
+        try {
+            Map<String, String> filesToDownload = Map.of(PlayerService.getInstance().get(account, item.getCmd()), item.getChannelName() + "." + item.getContainerExtension());
+            FileDownloader.openDownloadWindow(filesToDownload);
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
     public static class ChannelItem {
 
         private final SimpleStringProperty channelName;
+        private final SimpleStringProperty containerExtension;
         private final SimpleStringProperty channelId;
         private final SimpleStringProperty cmd;
 
-        public ChannelItem(SimpleStringProperty channelName, SimpleStringProperty channelId, SimpleStringProperty cmd) {
+        public ChannelItem(SimpleStringProperty channelName, SimpleStringProperty containerExtension, SimpleStringProperty channelId, SimpleStringProperty cmd) {
             this.channelName = channelName;
+            this.containerExtension = containerExtension;
             this.channelId = channelId;
             this.cmd = cmd;
         }
@@ -230,6 +251,14 @@ public class ChannelListUI extends HBox {
 
         public void setChannelName(String channelName) {
             this.channelName.set(channelName);
+        }
+
+        public String getContainerExtension() {
+            return containerExtension.get();
+        }
+
+        public SimpleStringProperty containerExtensionProperty() {
+            return containerExtension;
         }
 
         public String getChannelId() {

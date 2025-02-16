@@ -9,13 +9,14 @@ import java.util.Objects;
 import static com.uiptv.util.StringUtils.safeJson;
 
 public class Channel implements Serializable, JsonCompliant {
-    private String dbId, channelId, categoryId, name, number, cmd, cmd_1, cmd_2, cmd_3, logo;
+    private String dbId, channelId, categoryId, name, number, containerExtension, cmd, cmd_1, cmd_2, cmd_3, logo;
     private int censored, status, hd;
 
-    public Channel(String channelId, String name, String number, String cmd, String cmd_1, String cmd_2, String cmd_3, String logo, int censored, int status, int hd) {
+    public Channel(String channelId, String name, String number, String containerExtension, String cmd, String cmd_1, String cmd_2, String cmd_3, String logo, int censored, int status, int hd) {
         this.channelId = channelId;
         this.name = name;
         this.number = number;
+        this.containerExtension = containerExtension;
         this.cmd = cmd;
         this.cmd_1 = cmd_1;
         this.cmd_2 = cmd_2;
@@ -64,6 +65,14 @@ public class Channel implements Serializable, JsonCompliant {
 
     public void setNumber(String number) {
         this.number = number;
+    }
+
+    public String getContainerExtension() {
+        return containerExtension;
+    }
+
+    public void setContainerExtension(String containerExtension) {
+        this.containerExtension = containerExtension;
     }
 
     public String getCmd() {
@@ -135,12 +144,12 @@ public class Channel implements Serializable, JsonCompliant {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
         Channel channel = (Channel) o;
-        return censored == channel.censored && status == channel.status && hd == channel.hd && Objects.equals(dbId, channel.dbId) && Objects.equals(channelId, channel.channelId) && Objects.equals(categoryId, channel.categoryId) && Objects.equals(name, channel.name) && Objects.equals(number, channel.number) && Objects.equals(cmd, channel.cmd) && Objects.equals(cmd_1, channel.cmd_1) && Objects.equals(cmd_2, channel.cmd_2) && Objects.equals(cmd_3, channel.cmd_3) && Objects.equals(logo, channel.logo);
+        return censored == channel.censored && status == channel.status && hd == channel.hd && Objects.equals(dbId, channel.dbId) && Objects.equals(channelId, channel.channelId) && Objects.equals(categoryId, channel.categoryId) && Objects.equals(name, channel.name) && Objects.equals(number, channel.number) && Objects.equals(containerExtension, channel.containerExtension) && Objects.equals(cmd, channel.cmd) && Objects.equals(cmd_1, channel.cmd_1) && Objects.equals(cmd_2, channel.cmd_2) && Objects.equals(cmd_3, channel.cmd_3) && Objects.equals(logo, channel.logo);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(dbId, channelId, categoryId, name, number, cmd, cmd_1, cmd_2, cmd_3, logo, censored, status, hd);
+        return Objects.hash(dbId, channelId, categoryId, name, number, containerExtension, cmd, cmd_1, cmd_2, cmd_3, logo, censored, status, hd);
     }
 
     @Override
@@ -151,6 +160,7 @@ public class Channel implements Serializable, JsonCompliant {
                 ", categoryId='" + categoryId + '\'' +
                 ", name='" + name + '\'' +
                 ", number='" + number + '\'' +
+                ", containerExtension='" + containerExtension + '\'' +
                 ", cmd='" + cmd + '\'' +
                 ", cmd_1='" + cmd_1 + '\'' +
                 ", cmd_2='" + cmd_2 + '\'' +
@@ -170,6 +180,7 @@ public class Channel implements Serializable, JsonCompliant {
                 ",         \"categoryId\":\"" + safeJson(categoryId) + "\"" +
                 ",         \"name\":\"" + safeJson(name) + "\"" +
                 ",         \"number\":\"" + safeJson(number) + "\"" +
+                ",         \"containerExtension\":\"" + safeJson(containerExtension) + "\"" +
                 ",         \"cmd\":\"" + safeJson(cmd) + "\"" +
                 ",         \"cmd_1\":\"" + safeJson(cmd_1) + "\"" +
                 ",         \"cmd_2\":\"" + safeJson(cmd_2) + "\"" +

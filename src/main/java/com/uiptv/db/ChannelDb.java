@@ -58,6 +58,7 @@ public class ChannelDb extends BaseDb {
             statement.setInt(10, channel.getCensored());
             statement.setInt(11, channel.getStatus());
             statement.setInt(12, channel.getHd());
+            statement.setString(13, channel.getContainerExtension());
             statement.execute();
         } catch (SQLException e) {
             throw new RuntimeException("Unable to execute query");
@@ -83,7 +84,7 @@ public class ChannelDb extends BaseDb {
 
     @Override
     Channel populate(ResultSet resultSet) {
-        Channel c = new Channel(nullSafeString(resultSet, "channelId"), nullSafeString(resultSet, "name"), nullSafeString(resultSet, "number"), nullSafeString(resultSet, "cmd"), nullSafeString(resultSet, "cmd_1"), nullSafeString(resultSet, "cmd_2"), nullSafeString(resultSet, "cmd_3"), nullSafeString(resultSet, "logo"), safeInteger(resultSet, "censored"), safeInteger(resultSet, "status"), safeInteger(resultSet, "hd"));
+        Channel c = new Channel(nullSafeString(resultSet, "channelId"), nullSafeString(resultSet, "name"), nullSafeString(resultSet, "number"), nullSafeString(resultSet, "containerExtension"), nullSafeString(resultSet, "cmd"), nullSafeString(resultSet, "cmd_1"), nullSafeString(resultSet, "cmd_2"), nullSafeString(resultSet, "cmd_3"), nullSafeString(resultSet, "logo"), safeInteger(resultSet, "censored"), safeInteger(resultSet, "status"), safeInteger(resultSet, "hd"));
         c.setDbId(nullSafeString(resultSet, "id"));
         c.setCategoryId(nullSafeString(resultSet, "categoryId"));
         return c;

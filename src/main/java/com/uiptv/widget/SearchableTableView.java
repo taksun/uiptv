@@ -14,7 +14,7 @@ import java.util.List;
 import static com.uiptv.ui.RootApplication.GUIDED_MAX_WIDTH_PIXELS;
 import static com.uiptv.util.StringUtils.isBlank;
 
-public class SearchableTableView extends TableView {
+public class SearchableTableView<S> extends TableView<S> {
     private final UIptvText searchTextField = new UIptvText("search" + new Date().getTime(), "Search", 10);
 
     public SearchableTableView() {
@@ -27,10 +27,10 @@ public class SearchableTableView extends TableView {
         return searchTextField;
     }
 
-    public <T> void addTextFilter() {
+    public void addTextFilter() {
         TextField filterField = getSearchTextField();
-        final List<TableColumn<T, ?>> columns = getColumns();
-        FilteredList<T> filteredData = new FilteredList<>(getItems());
+        final List<TableColumn<S, ?>> columns = getColumns();
+        FilteredList<S> filteredData = new FilteredList<>(getItems());
         filteredData.predicateProperty().bind(Bindings.createObjectBinding(() -> {
             String text = filterField.getText();
             if (isBlank(text)) {
@@ -38,7 +38,7 @@ public class SearchableTableView extends TableView {
             }
             final String filterText = text.toLowerCase();
             return o -> {
-                for (TableColumn<T, ?> col : columns) {
+                for (TableColumn<S, ?> col : columns) {
                     ObservableValue<?> observable = col.getCellObservableValue(o);
                     if (observable != null) {
                         Object value = observable.getValue();
@@ -51,7 +51,7 @@ public class SearchableTableView extends TableView {
             };
         }, filterField.textProperty()));
 
-        SortedList<T> sortedData = new SortedList<>(filteredData);
+        SortedList<S> sortedData = new SortedList<>(filteredData);
         sortedData.comparatorProperty().bind(comparatorProperty());
         setItems(sortedData);
     }

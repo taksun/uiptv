@@ -14,6 +14,7 @@ import javafx.scene.control.RadioButton;
 import javafx.scene.control.ToggleGroup;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.VBox;
+import javafx.stage.DirectoryChooser;
 import javafx.stage.FileChooser;
 
 import java.io.File;
@@ -28,13 +29,16 @@ public class ConfigurationUI extends VBox {
     final Button browserButtonPlayerPath1 = new Button("Browse...");
     final Button browserButtonPlayerPath2 = new Button("Browse...");
     final Button browserButtonPlayerPath3 = new Button("Browse...");
+    final Button browserButtonDownloadPath = new Button("Browse...");
     final FileChooser fileChooser = new FileChooser();
+    final DirectoryChooser directoryChooser = new DirectoryChooser();
     private final RadioButton defaultPlayer1 = new RadioButton("");
     private final RadioButton defaultPlayer2 = new RadioButton("");
     private final RadioButton defaultPlayer3 = new RadioButton("");
     private final UIptvText playerPath1 = new UIptvText("playerPath1", "Enter your favorite player's Path here.", 5);
     private final UIptvText playerPath2 = new UIptvText("playerPath2", "Enter your second favorite player's Path here.", 5);
     private final UIptvText playerPath3 = new UIptvText("playerPath3", "Enter your third favorite player's Path here.", 5);
+    private final UIptvText downloadPath = new UIptvText("downloadPath", "Enter download Path here.", 5);
     private final UIptvTextArea filterCategoriesWithTextContains = new UIptvTextArea("filterCategoriesWithTextContains", "Enter comma separated list. All categories containing this would be filtered out.", 5);
     private final UIptvTextArea filterChannelWithTextContains = new UIptvTextArea("filterChannelWithTextContains", "Enter comma separated list. All Channels containing this would be filtered out.", 5);
     private final CheckBox filterPausedCheckBox = new CheckBox("Pause filtering");
@@ -73,6 +77,7 @@ public class ConfigurationUI extends VBox {
             playerPath1.setText(configuration.getPlayerPath1());
             playerPath2.setText(configuration.getPlayerPath2());
             playerPath3.setText(configuration.getPlayerPath3());
+            downloadPath.setText(configuration.getDownloadPath());
             filterCategoriesWithTextContains.setText(configuration.getFilterCategoriesList());
             filterChannelWithTextContains.setText(configuration.getFilterChannelsList());
             if (playerPath2.getText() != null && playerPath2.getText().equals(configuration.getDefaultPlayerPath())) {
@@ -91,6 +96,7 @@ public class ConfigurationUI extends VBox {
         playerPath1.setMinWidth(315);
         playerPath2.setMinWidth(315);
         playerPath3.setMinWidth(315);
+        downloadPath.setMinWidth(315);
         filterCategoriesWithTextContains.setMinWidth(250);
         filterChannelWithTextContains.setMinWidth(250);
         filterPausedCheckBox.setMinWidth(250);
@@ -100,11 +106,13 @@ public class ConfigurationUI extends VBox {
         saveButton.setMinHeight(50);
         saveButton.setPrefHeight(50);
         fileChooser.setTitle("Select your favorite streaming player");
+        directoryChooser.setTitle("Select download path");
         HBox box1 = new HBox(10, defaultPlayer1, playerPath1, browserButtonPlayerPath1);
         HBox box2 = new HBox(10, defaultPlayer2, playerPath2, browserButtonPlayerPath2);
         HBox box3 = new HBox(10, defaultPlayer3, playerPath3, browserButtonPlayerPath3);
+        HBox download = new HBox(10, downloadPath, browserButtonDownloadPath);
         HBox serverButtonWrapper = new HBox(10, serverPort, startServerButton, stopServerButton);
-        getChildren().addAll(box1, box2, box3, filterCategoriesWithTextContains, filterChannelWithTextContains,
+        getChildren().addAll(box1, box2, box3, download, filterCategoriesWithTextContains, filterChannelWithTextContains,
                 fontFamily, fontSize, fontWeight, darkThemeCheckBox, filterPausedCheckBox,
                 new HBox(10, pauseCachingCheckBox, clearCacheButton),
                 serverButtonWrapper, saveButton);
@@ -112,6 +120,7 @@ public class ConfigurationUI extends VBox {
         addBrowserButton1ClickHandler();
         addBrowserButton2ClickHandler();
         addBrowserButton3ClickHandler();
+        addDownloadButtonClickHandler();
         addStartServerButtonClickHandler();
         addStopServerButtonClickHandler();
         addClearCacheButtonClickHandler();
@@ -163,7 +172,7 @@ public class ConfigurationUI extends VBox {
                     defaultPlayer = playerPath3.getText();
                 }
                 Configuration c = new Configuration(
-                        playerPath1.getText(), playerPath2.getText(), playerPath3.getText(), defaultPlayer,
+                        playerPath1.getText(), playerPath2.getText(), playerPath3.getText(), downloadPath.getText(), defaultPlayer,
                         filterCategoriesWithTextContains.getText(), filterChannelWithTextContains.getText(),
                         filterPausedCheckBox.isSelected(),
                         fontFamily.getText(), fontSize.getText(), fontWeight.getText(),
@@ -175,7 +184,9 @@ public class ConfigurationUI extends VBox {
                 showMessageAlert("Successfully saved!");
                 onSaveCallback.call(null);
             } catch (Exception e) {
-                showErrorAlert("Failed to save successfully saved!");
+                System.out.printf(e.getMessage());
+                e.printStackTrace();
+                showErrorAlert("Failed to save configuration!");
             }
         });
     }
@@ -198,6 +209,13 @@ public class ConfigurationUI extends VBox {
         browserButtonPlayerPath3.setOnAction(actionEvent -> {
             File file = fileChooser.showOpenDialog(RootApplication.primaryStage);
             playerPath3.setText(file.getAbsolutePath());
+        });
+    }
+
+    private void addDownloadButtonClickHandler() {
+        browserButtonDownloadPath.setOnAction(actionEvent -> {
+            File file = directoryChooser.showDialog(RootApplication.primaryStage);
+            downloadPath.setText(file.getAbsolutePath());
         });
     }
 }

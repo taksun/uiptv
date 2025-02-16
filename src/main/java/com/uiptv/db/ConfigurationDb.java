@@ -48,6 +48,7 @@ public class ConfigurationDb extends BaseDb {
                 nullSafeString(resultSet, "playerPath1"),
                 nullSafeString(resultSet, "playerPath2"),
                 nullSafeString(resultSet, "playerPath3"),
+                nullSafeString(resultSet, "downloadPath"),
                 nullSafeString(resultSet, "defaultPlayerPath"),
                 nullSafeString(resultSet, "filterCategoriesList"),
                 nullSafeString(resultSet, "filterChannelsList"),
@@ -88,8 +89,11 @@ public class ConfigurationDb extends BaseDb {
             statement.setString(11, configuration.isDarkTheme() ? "1" : "0");
             statement.setString(12, configuration.getServerPort());
             statement.setString(13, configuration.isPauseCaching() ? "1" : "0");
+            statement.setString(14, configuration.getDownloadPath());
             statement.execute();
         } catch (SQLException e) {
+            System.out.println(e.getMessage());
+            e.printStackTrace();
             throw new RuntimeException("Unable to execute query");
         }
     }

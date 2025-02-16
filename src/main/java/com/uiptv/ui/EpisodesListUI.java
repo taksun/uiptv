@@ -6,6 +6,7 @@ import com.uiptv.model.EpisodeList;
 import com.uiptv.service.BookmarkService;
 import com.uiptv.service.ConfigurationService;
 import com.uiptv.service.PlayerService;
+import com.uiptv.util.FileDownloader;
 import com.uiptv.util.Platform;
 import com.uiptv.widget.AutoGrowVBox;
 import com.uiptv.widget.UIptvAlert;
@@ -18,15 +19,16 @@ import javafx.scene.input.KeyCode;
 import javafx.scene.input.MouseButton;
 import javafx.scene.layout.HBox;
 
+import java.io.File;
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.List;
+import java.util.*;
+import java.util.stream.Collectors;
 
 public class EpisodesListUI extends HBox {
     private final Account account;
     private final String categoryTitle;
     private final BookmarkChannelListUI bookmarkChannelListUI;
-    SearchableTableView table = new SearchableTableView();
+    SearchableTableView<EpisodeItem> table = new SearchableTableView<>();
     TableColumn<EpisodeItem, String> channelName = new TableColumn("Episodes");
     private final EpisodeList channelList;
 
@@ -45,7 +47,7 @@ public class EpisodesListUI extends HBox {
             Bookmark b = new Bookmark(account.getAccountName(), categoryTitle, i.getId(), i.getTitle(), i.getCmd(), account.getServerPortalUrl());
             boolean checkBookmark = BookmarkService.getInstance().isChannelBookmarked(b);
             UIptvAlert.showMessage(b + " --- " + String.valueOf(checkBookmark));
-            catList.add(new EpisodeItem(new SimpleStringProperty(checkBookmark ? "**" + i.getTitle().replace("*", "") + "**" : i.getTitle()), new SimpleStringProperty(i.getId()), new SimpleStringProperty(i.getCmd())));
+            catList.add(new EpisodeItem(new SimpleStringProperty(checkBookmark ? "**" + i.getTitle().replace("*", "") + "**" : i.getTitle()), new SimpleStringProperty(i.getContainerExtension()), new SimpleStringProperty(i.getId()), new SimpleStringProperty(i.getCmd())));
         });
         table.setItems(FXCollections.observableArrayList(catList));
         table.addTextFilter();
@@ -54,6 +56,7 @@ public class EpisodesListUI extends HBox {
     private void initWidgets() {
         setSpacing(10);
         table.setEditable(true);
+        table.getSelectionModel().setSelectionMode(SelectionMode.MULTIPLE);
         table.getColumns().addAll(channelName);
         channelName.setText("Episodes of " + categoryTitle);
         channelName.setVisible(true);
@@ -80,14 +83,14 @@ public class EpisodesListUI extends HBox {
     private void addChannelClickHandler() {
         table.setOnKeyReleased(event -> {
             if (event.getCode() == KeyCode.ENTER) {
-                play((EpisodeItem) table.getFocusModel().getFocusedItem());
+                download();
             }
         });
         table.setRowFactory(tv -> {
             TableRow<EpisodeItem> row = new TableRow<>();
             row.setOnMouseClicked(event -> {
                 if (!row.isEmpty() && event.getButton() == MouseButton.PRIMARY && event.getClickCount() == 2) {
-                    play(row.getItem());
+                    download();
                 }
             });
             addRightClickContextMenu(row);
@@ -114,13 +117,18 @@ public class EpisodesListUI extends HBox {
             rowMenu.hide();
             play3(row);
         });
+        MenuItem downloadItem = new MenuItem("Download");
+        downloadItem.setOnAction(event -> {
+            rowMenu.hide();
+            download();
+        });
 
         MenuItem reconnectAndPlayItem = new MenuItem("Reconnect & Play");
         reconnectAndPlayItem.setOnAction(event -> {
             rowMenu.hide();
             reconnectAndPlay(row, ConfigurationService.getInstance().read().getDefaultPlayerPath());
         });
-        rowMenu.getItems().addAll(player1Item, player2Item, player3Item, reconnectAndPlayItem);
+        rowMenu.getItems().addAll(player1Item, player2Item, player3Item, downloadItem, reconnectAndPlayItem);
 
         // only display context menu for non-empty rows:
         row.contextMenuProperty().bind(
@@ -138,32 +146,33 @@ public class EpisodesListUI extends HBox {
     }
 
     private void play(EpisodeItem item) {
-        try {
-            Platform.executeCommand(ConfigurationService.getInstance().read().getDefaultPlayerPath(), PlayerService.getInstance().get(account, item.getCmd()));
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        }
+        Platform.executeCommand(ConfigurationService.getInstance().read().getDefaultPlayerPath(), getEpisodeUrl(item));
     }
 
     private void play1(TableRow<EpisodeItem> row) {
-        try {
-            Platform.executeCommand(ConfigurationService.getInstance().read().getPlayerPath1(), PlayerService.getInstance().get(account, row.getItem().getCmd()));
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        }
+        Platform.executeCommand(ConfigurationService.getInstance().read().getPlayerPath1(), getEpisodeUrl(row.getItem()));
     }
 
     private void play2(TableRow<EpisodeItem> row) {
-        try {
-            Platform.executeCommand(ConfigurationService.getInstance().read().getPlayerPath2(), PlayerService.getInstance().get(account, row.getItem().getCmd()));
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        }
+        Platform.executeCommand(ConfigurationService.getInstance().read().getPlayerPath2(), getEpisodeUrl(row.getItem()));
     }
 
     private void play3(TableRow<EpisodeItem> row) {
+        Platform.executeCommand(ConfigurationService.getInstance().read().getPlayerPath3(), getEpisodeUrl(row.getItem()));
+    }
+
+    private void download() {
+        Map<String, String> filesToDownload = table.getSelectionModel().getSelectedItems().stream().sorted(Comparator.comparing(EpisodeItem::getEpisodeId)).collect(Collectors.toMap(this::getEpisodeUrl, this::getFilePath, (a, b) -> a, LinkedHashMap::new));
+        FileDownloader.openDownloadWindow(filesToDownload);
+    }
+
+    private String getFilePath(EpisodeItem item) {
+        return item.getEpisodeName() + "." + item.getContainerExtension();
+    }
+
+    private String getEpisodeUrl(EpisodeItem item) {
         try {
-            Platform.executeCommand(ConfigurationService.getInstance().read().getPlayerPath3(), PlayerService.getInstance().get(account, row.getItem().getCmd()));
+            return PlayerService.getInstance().get(account, item.getCmd());
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
@@ -172,11 +181,13 @@ public class EpisodesListUI extends HBox {
     public static class EpisodeItem {
 
         private final SimpleStringProperty episodeName;
+        private final SimpleStringProperty containerExtension;
         private final SimpleStringProperty episodeId;
         private final SimpleStringProperty cmd;
 
-        public EpisodeItem(SimpleStringProperty episodeName, SimpleStringProperty episodeId, SimpleStringProperty cmd) {
+        public EpisodeItem(SimpleStringProperty episodeName, SimpleStringProperty containerExtension, SimpleStringProperty episodeId, SimpleStringProperty cmd) {
             this.episodeName = episodeName;
+            this.containerExtension = containerExtension;
             this.episodeId = episodeId;
             this.cmd = cmd;
         }
@@ -187,6 +198,14 @@ public class EpisodesListUI extends HBox {
 
         public void setEpisodeName(String episodeName) {
             this.episodeName.set(episodeName);
+        }
+
+        public String getContainerExtension() {
+            return containerExtension.get();
+        }
+
+        public SimpleStringProperty containerExtensionProperty() {
+            return containerExtension;
         }
 
         public String getEpisodeId() {

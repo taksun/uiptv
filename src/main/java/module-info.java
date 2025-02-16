@@ -10,6 +10,7 @@ module com.uiptv {
     requires net.bjoernpetersen.m3u;
     requires java.sql;
     requires com.rometools.rome;
+    requires annotations;
 
     opens com.uiptv.ui to javafx.fxml;
     exports com.uiptv.ui;

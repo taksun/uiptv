@@ -102,7 +102,7 @@ public class ChannelService {
         Set<Channel> channels = new LinkedHashSet<>();
         List<PlaylistEntry> m3uEntries = account.getType() == M3U8_URL ? parseChannelUrlM3U8(new URL(account.getM3u8Path())) : parseChannelPathM3U8(account.getM3u8Path());
         m3uEntries.stream().filter(e -> category.equalsIgnoreCase("All") || e.getGroupTitle().equalsIgnoreCase(category) || e.getId().equalsIgnoreCase(category)).forEach(entry -> {
-            Channel c = new Channel(entry.getId(), entry.getTitle(), null, entry.getPlaylistEntry(), null, null, null, entry.getLogo(), 0, 0, 0);
+            Channel c = new Channel(entry.getId(), entry.getTitle(), null, null, entry.getPlaylistEntry(), null, null, null, entry.getLogo(), 0, 0, 0);
             channels.add(c);
         });
         return channels.stream().toList();
@@ -111,7 +111,7 @@ public class ChannelService {
         Set<Channel> channels = new LinkedHashSet<>();
         List<PlaylistEntry> rssEntries = RssParser.parse(account.getM3u8Path());
         rssEntries.stream().filter(e -> category.equalsIgnoreCase("All") || e.getGroupTitle().equalsIgnoreCase(category) || e.getId().equalsIgnoreCase(category)).forEach(entry -> {
-            Channel c = new Channel(entry.getId(), entry.getTitle(), null, entry.getPlaylistEntry(), null, null, null, entry.getLogo(), 0, 0, 0);
+            Channel c = new Channel(entry.getId(), entry.getTitle(), null, null, entry.getPlaylistEntry(), null, null, null, entry.getLogo(), 0, 0, 0);
             channels.add(c);
         });
         return channels.stream().toList();
@@ -152,7 +152,7 @@ public class ChannelService {
             List<Channel> channelList = new ArrayList<>();
             for (int i = 0; i < list.length(); i++) {
                 JSONObject jsonChannel = list.getJSONObject(i);
-                channelList.add(new Channel(jsonChannel.getString("id"), jsonChannel.getString("name"), jsonChannel.getString("number"), jsonChannel.getString("cmd"), jsonChannel.getString("cmd_1"), jsonChannel.getString("cmd_2"), jsonChannel.getString("cmd_3"), jsonChannel.getString("logo"), nullSafeInteger(jsonChannel, "censored"), nullSafeInteger(jsonChannel, "status"), nullSafeInteger(jsonChannel, "hd")));
+                channelList.add(new Channel(jsonChannel.getString("id"), jsonChannel.getString("name"), jsonChannel.getString("number"), jsonChannel.getString("containerExtension"), jsonChannel.getString("cmd"), jsonChannel.getString("cmd_1"), jsonChannel.getString("cmd_2"), jsonChannel.getString("cmd_3"), jsonChannel.getString("logo"), nullSafeInteger(jsonChannel, "censored"), nullSafeInteger(jsonChannel, "status"), nullSafeInteger(jsonChannel, "hd")));
             }
             return censor(channelList);
 
@@ -176,17 +176,18 @@ public class ChannelService {
                 //String number = nullSafeString(jsonChannel, "tmdb");
                 //if (isBlank(number)) {
                 String number = nullSafeString(jsonChannel, "id");
+                String containerExtension = nullSafeString(jsonChannel, "containerExtension");
                 //}
                 String cmd = nullSafeString(jsonChannel, "cmd");
                 if (account.getAction() == series && isNotBlank(cmd)) {
                     JSONArray series = jsonChannel.getJSONArray("series");
                     if (series != null) {
                         for (int j = 0; j < series.length(); j++) {
-                            channelList.add(new Channel(String.valueOf(series.get(j)), name + " - Episode " + String.valueOf(series.get(j)), number, cmd, null, null, null, nullSafeString(jsonChannel, "screenshot_uri"), nullSafeInteger(jsonChannel, "censored"), nullSafeInteger(jsonChannel, "status"), nullSafeInteger(jsonChannel, "hd")));
+                            channelList.add(new Channel(String.valueOf(series.get(j)), name + " - Episode " + String.valueOf(series.get(j)), number, containerExtension, cmd, null, null, null, nullSafeString(jsonChannel, "screenshot_uri"), nullSafeInteger(jsonChannel, "censored"), nullSafeInteger(jsonChannel, "status"), nullSafeInteger(jsonChannel, "hd")));
                         }
                     }
                 } else {
-                    channelList.add(new Channel(jsonChannel.getString("id"), name, number, cmd, null, null, null, nullSafeString(jsonChannel, "screenshot_uri"), nullSafeInteger(jsonChannel, "censored"), nullSafeInteger(jsonChannel, "status"), nullSafeInteger(jsonChannel, "hd")));
+                    channelList.add(new Channel(jsonChannel.getString("id"), name, number, containerExtension, cmd, null, null, null, nullSafeString(jsonChannel, "screenshot_uri"), nullSafeInteger(jsonChannel, "censored"), nullSafeInteger(jsonChannel, "status"), nullSafeInteger(jsonChannel, "hd")));
                 }
             }
             List<Channel> censoredChannelList = censor(channelList);
