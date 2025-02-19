@@ -6,11 +6,10 @@ module com.uiptv {
     requires org.apache.commons.io;
     requires jdk.httpserver;
     requires net.bjoernpetersen.m3u;
-    requires java.sql;
     requires com.rometools.rome;
-    requires annotations;
-    requires javafx.web;
     requires java.net.http;
+    requires org.slf4j;
+    requires org.xerial.sqlitejdbc;
 
     opens com.uiptv.ui to javafx.fxml;
     exports com.uiptv.ui;

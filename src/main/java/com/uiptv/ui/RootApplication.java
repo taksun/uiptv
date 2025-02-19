@@ -29,7 +29,7 @@ public class RootApplication extends Application {
     public static Stage primaryStage;
 
     public static void main(String[] args) {
-        LogsUI.logInfoNoRefreshWeb("Aplikacja uruchomiona.");
+        LogsUI.logInfoNoRefresh("Aplikacja uruchomiona.");
         if (args != null && Arrays.stream(args).anyMatch(s -> s.toLowerCase().contains("headless"))) {
             try {
                 UIptvServer.start();
@@ -53,7 +53,7 @@ public class RootApplication extends Application {
 
     @Override
     public final void start(Stage primaryStage) throws IOException {
-        LogsUI.logInfoNoRefreshWeb("Inicjalizacja komponentów...");
+        LogsUI.logInfoNoRefresh("Inicjalizacja komponentów...");
         RootApplication.primaryStage = primaryStage;
 
         ManageAccountUI manageAccountUI = new ManageAccountUI();

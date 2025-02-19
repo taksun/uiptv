@@ -1,13 +1,12 @@
 package com.uiptv.ui;
 
-import com.uiptv.service.ConfigurationService;
 import javafx.application.Platform;
 import javafx.scene.control.Button;
+import javafx.scene.control.TextArea;
 import javafx.scene.input.Clipboard;
 import javafx.scene.input.ClipboardContent;
 import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.HBox;
-import javafx.scene.web.WebView;
 
 import java.io.PrintWriter;
 import java.io.StringWriter;
@@ -16,25 +15,14 @@ public class LogsUI extends BorderPane {
     public static final String ERROR = "ERROR";
     public static final String INFO = "INFO";
     private static final int MAX_LINES = 1000; // Maksymalna liczba linii w logach
-    private static WebView logWebView;
-    private static final StringBuilder logs = new StringBuilder(); // Przechowuje wszystkie logi jako HTML
+    private static TextArea logTextArea; // TextArea do wyświetlania logów
+    private static final StringBuilder logs = new StringBuilder(); // Przechowuje wszystkie logi jako tekst
 
     public LogsUI() {
-        logWebView = new WebView(); // WebView do wyświetlania kolorowanych logów
-        logWebView.setMinHeight(500);
-
-        // Ścieżka do pliku CSS (musi być dostępna w classpath lub jako plik)
-        String cssFile = ConfigurationService.getInstance().read().isDarkTheme() ? "/dark-application.css" : "/application.css";
-        String cssPath = LogsUI.class.getResource(cssFile).toExternalForm();
-
-        // HTML z zewnętrznym CSS
-        String htmlContent = """
-                <html>
-                    <head>
-                        <link rel="stylesheet" type="text/css" href="%s">
-                    </head>
-                """.formatted(cssPath);
-        logs.append(htmlContent).append("<body><pre>");
+        logTextArea = new TextArea(); // TextArea do wyświetlania logów
+        logTextArea.setEditable(false); // Uniemożliwia edycję logów przez użytkownika
+        logTextArea.setWrapText(true); // Zawijanie tekstu
+        logTextArea.setMinHeight(500);
 
         // Przycisk do czyszczenia logów
         Button clearButton = new Button("Wyczyść logi");
@@ -44,7 +32,7 @@ public class LogsUI extends BorderPane {
         Button copySelectedLogsButton = new Button("Kopiuj zaznaczone logi");
         copySelectedLogsButton.setOnAction(e -> copySelectedLogsToClipboard()); // Obsługa zdarzenia kliknięcia
 
-        setCenter(logWebView); // WebView w centrum
+        setCenter(logTextArea); // TextArea w centrum
         setBottom(new HBox(10, clearButton, copySelectedLogsButton)); // Przyciski na dole
     }
 
@@ -62,7 +50,7 @@ public class LogsUI extends BorderPane {
         log(message, INFO);
     }
 
-    public static void logInfoNoRefreshWeb(String message) {
+    public static void logInfoNoRefresh(String message) {
         log(message, INFO, false);
     }
 
@@ -70,28 +58,23 @@ public class LogsUI extends BorderPane {
         log(message, level, true);
     }
 
-    public static void log(String message, String level, boolean refreshWeb) {
-        // Dodaj log z odpowiednim kolorem
-        String color = "black"; // Domyślny kolor
-        if (ERROR.equals(level)) {
-            color = "red"; // Czerwony dla błędów
-        } else if (ConfigurationService.getInstance().read().isDarkTheme()) {
-            color = "white";
-        }
+    public static void log(String message, String level, boolean refreshTextArea) {
+        // Dodaj log z odpowiednim formatowaniem
+        String formattedMessage = "[" + level + "] " + message + "\n";
 
         // Dodaj log do StringBuilder
-        logs.append("<span style='color:").append(color).append(";'>").append(message).append("</span><br>");
+        logs.append(formattedMessage);
 
         // Ograniczenie liczby linii w logach
-        if (logs.toString().split("<br>").length > MAX_LINES) {
-            int firstLineEnd = logs.indexOf("<br>") + 4; // Znajdź koniec pierwszej linii
+        if (logs.toString().split("\n").length > MAX_LINES) {
+            int firstLineEnd = logs.indexOf("\n") + 1; // Znajdź koniec pierwszej linii
             logs.delete(0, firstLineEnd); // Usuń najstarszą linię
         }
 
-        if (refreshWeb) {
+        if (refreshTextArea) {
             Platform.runLater(() -> {
-                // Zaktualizuj WebView
-                logWebView.getEngine().loadContent(logs + "</pre></body></html>");
+                // Zaktualizuj TextArea
+                logTextArea.setText(logs.toString());
 
                 // Przewiń do końca po zaktualizowaniu zawartości
                 scrollToBottom();
@@ -99,26 +82,17 @@ public class LogsUI extends BorderPane {
         }
     }
 
-    // Metoda do przewijania WebView do końca
+    // Metoda do przewijania TextArea do końca
     private static void scrollToBottom() {
-        // Dodaj opóźnienie, aby zapewnić, że zawartość jest renderowana
-        Thread.ofVirtual().start(() -> {
-            try {
-                Thread.sleep(100); // Opóźnienie 100 ms
-            } catch (InterruptedException e) {
-                e.printStackTrace();
-            }
-            Platform.runLater(() -> logWebView.getEngine().executeScript(
-                    "window.scrollTo(0, document.body.scrollHeight);"
-            ));
+        Platform.runLater(() -> {
+            logTextArea.setScrollTop(Double.MAX_VALUE); // Przewiń do końca
         });
     }
 
     // Metoda do czyszczenia logów
     public void clearLogs() {
         logs.setLength(0); // Wyczyść StringBuilder
-        logs.append("<html><body><pre>"); // Zresetuj HTML
-        logWebView.getEngine().loadContent(logs + "</pre></body></html>");
+        logTextArea.clear(); // Wyczyść TextArea
     }
 
     // Metoda do konwersji stack trace na ciąg znaków
@@ -131,7 +105,7 @@ public class LogsUI extends BorderPane {
 
     // Metoda do kopiowania zaznaczonych logów do schowka
     private void copySelectedLogsToClipboard() {
-        String selectedText = (String) logWebView.getEngine().executeScript("window.getSelection().toString();");
+        String selectedText = logTextArea.getSelectedText();
         if (selectedText != null && !selectedText.isEmpty()) {
             // Skopiuj zaznaczony tekst do schowka
             Clipboard clipboard = Clipboard.getSystemClipboard();

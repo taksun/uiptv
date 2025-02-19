@@ -12,7 +12,7 @@
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
-        <platform>Linux</platform>
+        <platform>Windows</platform>
         <sqlite.arch>x86_64</sqlite.arch>
     </properties>
 
@@ -39,11 +39,6 @@
         </dependency>
         <dependency>
             <groupId>org.openjfx</groupId>
-            <artifactId>javafx-web</artifactId>
-            <version>23.0.2</version>
-        </dependency>
-        <dependency>
-            <groupId>org.openjfx</groupId>
             <artifactId>javafx-fxml</artifactId>
             <version>23.0.2</version>
         </dependency>
@@ -63,9 +58,14 @@
             <version>1.4.0</version>
         </dependency>
         <dependency>
-            <groupId>io.github.willena</groupId>
+            <groupId>org.xerial</groupId>
             <artifactId>sqlite-jdbc</artifactId>
-            <version>3.49.0.0</version>
+            <version>3.49.1.0</version>
+        </dependency>
+        <dependency>
+            <groupId>org.slf4j</groupId>
+            <artifactId>slf4j-api</artifactId>
+            <version>1.7.36</version>
         </dependency>
         <dependency>
             <groupId>com.rometools</groupId>
