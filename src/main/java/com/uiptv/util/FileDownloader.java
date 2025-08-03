@@ -142,7 +142,7 @@ public class FileDownloader {
                     }
 
                     String fileUrl = first.get().getKey();
-                    String destinationFileName = first.get().getValue();
+                    String destinationFileName = first.get().getValue().replaceAll("[\\\\/:*?\"<>|]", "");
 
                     LogsUI.logInfo("Rozpoczynam pobieranie: " + destinationFileName);
 
